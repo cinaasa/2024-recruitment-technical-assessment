@@ -13,6 +13,7 @@ function leafFiles(files) {
     }
   }
 
+  // if file has no children, it is a leaf, push to new array
   leaves = new Array()
   for (file in has_children) {
     if (has_children[file] == false) {
@@ -31,6 +32,7 @@ function kLargestCategories(files, k) {
   categories_list = {};
 
   for (i = 0; i < files.length; i++) {
+    // for every category in a file, increase category count in categories_list by 1
     for (category of files[i].categories) {
       if (category in categories_list) {
         categories_list[category] += 1;
@@ -40,6 +42,7 @@ function kLargestCategories(files, k) {
     }
   }
 
+  // sort categories by most frequent, then alphabetically
   sorted = Object.keys(categories_list).sort((a, b) => {
     if (categories_list[b] - categories_list[a] != 0) {
       return categories_list[b] - categories_list[a];
@@ -48,9 +51,11 @@ function kLargestCategories(files, k) {
     }
   });
 
+  // remove extra categories
   if (sorted.length > k) {
     sorted.length = k;
   }
+
   return sorted;
 }
 
@@ -58,29 +63,31 @@ function kLargestCategories(files, k) {
  * Task 1
  */
 function largestFileSize(files) {
-  with_children = {};
+  let max = 0;   // max file size
+  let size = 0; // size of current file & its children
   for (file of files) {
-    if (file.id in with_children) {
-      if (file.parent in with_children) {
-        with_children[file.parent] += file.size;
-      } else {
-        with_children[file.parent] = file.size;
-      }
-    } else {
-      with_children[file.id] = file.size;
-      if (file.parent in with_children) {
-        with_children[file.parent] += file.size;
-      } else {
-        with_children[file.parent] = file.size;
-      }
+    if (file.parent == -1) {
+      size = file.size + getChildrenSize(file, files, 0);
     }
-    
+    if (size > max) {
+      max = size;
+    }
   }
-  console.log(with_children);
-  console.log(1024 + 2048 + 4096 + 3072)
-  return 0;
+  return max;
 }
 
+// function that gets all the children, grandchildren, etc. of a certain file
+function getChildrenSize(file, files, size) {
+  let children = files.filter((x) => x.parent == file.id);
+  
+  if (children.length > 0) {
+    for (child of children) {
+      size += child.size + getChildrenSize(child, files, 0);
+    }
+  }
+
+  return size;
+}
 
 function arraysEqual(a, b) {
     if (a === b) return true;
@@ -90,6 +97,7 @@ function arraysEqual(a, b) {
     for (let i = 0; i < a.length; ++i) {
         if (a[i] !== b[i]) return false;
     }
+    
     return true;
 }
 
@@ -110,6 +118,10 @@ const testFiles = [
 ];
 
 const testFiles2 = [
+];
+
+const testFiles3 = [
+  { id: 233, name: "Folder3", categories: ["Folder"], parent: -1, size: 4096 }
 ];
 
 console.assert(arraysEqual(
@@ -142,10 +154,19 @@ console.assert(arraysEqual(
   ["Documents", "Folder", "Media", "Excel", "Audio", "Backup", "Photos", "Presentation", "Programming", "Videos"]
 ));
 
-// test works when there are no files
+// test when there are no files
 console.assert(arraysEqual(
   kLargestCategories(testFiles2, 2),
   []
 ));
 
+
+// Task 3 tests
+
 console.assert(largestFileSize(testFiles) == 20992)
+
+// if there are no files
+console.assert(largestFileSize(testFiles2) == 0)
+
+// if there is one file
+console.assert(largestFileSize(testFiles3) == 4096)
